@@ -53,10 +53,10 @@ resource "azurerm_resource_group" "concourse" {
 }
 
 resource "azurerm_public_ip" "bosh" {
-  name                         = "${var.env_id}-bosh"
-  location                     = "${var.region}"
-  resource_group_name          = "${azurerm_resource_group.concourse.name}"
-  public_ip_address_allocation = "static"
+  name                = "${var.env_id}-bosh"
+  location            = "${var.region}"
+  resource_group_name = "${azurerm_resource_group.concourse.name}"
+  allocation_method   = "static"
 
   tags {
     environment = "${var.env_id}"
@@ -102,14 +102,12 @@ resource "azurerm_storage_account" "bosh" {
 
 resource "azurerm_storage_container" "bosh" {
   name                  = "bosh"
-  resource_group_name   = "${azurerm_resource_group.concourse.name}"
   storage_account_name  = "${azurerm_storage_account.bosh.name}"
   container_access_type = "private"
 }
 
 resource "azurerm_storage_container" "stemcell" {
   name                  = "stemcell"
-  resource_group_name   = "${azurerm_resource_group.concourse.name}"
   storage_account_name  = "${azurerm_storage_account.bosh.name}"
   container_access_type = "blob"
 }
@@ -258,11 +256,11 @@ resource "tls_private_key" "bosh_vms" {
 }
 
 resource "azurerm_public_ip" "concourse" {
-  name                         = "${var.env_id}-concourse-lb"
-  location                     = "${var.region}"
-  resource_group_name          = "${azurerm_resource_group.concourse.name}"
-  public_ip_address_allocation = "static"
-  sku                          = "Standard"
+  name                = "${var.env_id}-concourse-lb"
+  location            = "${var.region}"
+  resource_group_name = "${azurerm_resource_group.concourse.name}"
+  allocation_method   = "static"
+  sku                 = "Standard"
 
   tags {
     environment = "${var.env_id}"
