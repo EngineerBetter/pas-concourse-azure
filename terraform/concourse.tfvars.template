@@ -1,0 +1,14 @@
+subscription_id = ""
+
+tenant_id = ""
+
+client_id = ""
+
+client_secret = ""
+
+env_id = ""
+
+region = "UK South"
+
+# Must contain no '-' and must be <= 20 characters
+simple_env_id = ""
