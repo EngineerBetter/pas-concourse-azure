@@ -232,10 +232,6 @@ output "public_key" {
   sensitive = false
 }
 
-output "jumpbox_url" {
-  value = "${azurerm_public_ip.bosh.ip_address}:22"
-}
-
 output "network_cidr" {
   value = "${var.network_cidr}"
 }
@@ -254,14 +250,6 @@ output "subnet_cidr" {
 
 output "internal_gw" {
   value = "${cidrhost(var.internal_cidr, 1)}"
-}
-
-output "jumpbox__internal_ip" {
-  value = "${cidrhost(var.internal_cidr, 5)}"
-}
-
-output "director__internal_ip" {
-  value = "${cidrhost(var.internal_cidr, 6)}"
 }
 
 resource "tls_private_key" "bosh_vms" {
