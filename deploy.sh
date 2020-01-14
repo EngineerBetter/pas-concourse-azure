@@ -21,7 +21,6 @@ client_id="$(terraform output client_id)"
 client_secret="$(terraform output client_secret)"
 concourse_lb_ip="$(terraform output concourse_lb_ip)"
 concourse_lb_name="$(terraform output concourse_lb_name)"
-concourse_web_ip="$(terraform output concourse_lb_ip)"
 default_security_group="$(terraform output default_security_group)"
 director_internal_ip="$(terraform output director_internal_ip)"
 external_ip="$(terraform output external_ip)"
@@ -99,7 +98,7 @@ pushd concourse-bosh-deployment/cluster
     --var local_user.username=admin \
     --var local_user.password="${CONCOURSE_PASSWORD}" \
     --var external_host="${concourse_lb_ip}" \
-    --var external_url="http://${concourse_web_ip}:8080" \
+    --var external_url="https://${concourse_lb_ip}" \
     --var network_name=private \
     --var web_vm_type=default \
     --var web_network_name=private \
