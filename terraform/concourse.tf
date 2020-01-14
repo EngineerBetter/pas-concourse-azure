@@ -56,7 +56,7 @@ resource "azurerm_public_ip" "bosh" {
   name                = "${var.env_id}-bosh"
   location            = "${var.region}"
   resource_group_name = "${azurerm_resource_group.concourse.name}"
-  allocation_method   = "static"
+  allocation_method   = "Static"
 
   tags {
     environment = "${var.env_id}"
@@ -178,14 +178,28 @@ resource "azurerm_network_security_rule" "dns" {
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
 
-resource "azurerm_network_security_rule" "credhub" {
-  name                        = "${var.env_id}-credhub"
+resource "azurerm_network_security_rule" "bosh-credhub" {
+  name                        = "${var.env_id}-bosh-credhub"
   priority                    = 204
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "8844"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = "${azurerm_resource_group.concourse.name}"
+  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
+}
+
+resource "azurerm_network_security_rule" "bosh-uaa" {
+  name                        = "${var.env_id}-bosh-uaa"
+  priority                    = 205
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "8443"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
   resource_group_name         = "${azurerm_resource_group.concourse.name}"
@@ -259,7 +273,7 @@ resource "azurerm_public_ip" "concourse" {
   name                = "${var.env_id}-concourse-lb"
   location            = "${var.region}"
   resource_group_name = "${azurerm_resource_group.concourse.name}"
-  allocation_method   = "static"
+  allocation_method   = "Static"
   sku                 = "Standard"
 
   tags {
@@ -409,8 +423,8 @@ resource "azurerm_network_security_rule" "concourse-credhub" {
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
 
-resource "azurerm_network_security_rule" "uaa" {
-  name                        = "${var.env_id}-uaa"
+resource "azurerm_network_security_rule" "concourse-uaa" {
+  name                        = "${var.env_id}-concourse-uaa"
   priority                    = 206
   direction                   = "Inbound"
   access                      = "Allow"
@@ -451,4 +465,8 @@ output "client_id" {
 
 output "client_secret" {
   value = "${var.client_secret}"
+}
+
+output "director_internal_ip" {
+  value = "${cidrhost(var.internal_cidr, 6)}"
 }
