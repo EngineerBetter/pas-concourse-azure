@@ -118,7 +118,7 @@ instance_groups:
           ca_cert:
             certificate: ((internal_tls.ca))
         url: https://((external_host)):8844
-      external_url: ((external_url))
+      external_url: https://((external_host))
       log_level: debug
       postgresql:
         database: &db_name atc

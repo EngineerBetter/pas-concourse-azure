@@ -90,6 +90,5 @@ pushd manifests
     --vars-store ../bosh-files/concourse-creds.yml \
     --var atc_password="${CONCOURSE_PASSWORD}" \
     --var external_host="${concourse_lb_ip}" \
-    --var external_url="https://${concourse_lb_ip}" \
     --non-interactive
 popd
