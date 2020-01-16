@@ -28,8 +28,6 @@ variables:
   type: password
 - name: uaa-passphrase
   type: password
-- name: influxdb_password
-  type: password
 - name: token_signing_key
   type: rsa
 - name: tsa_host_key
