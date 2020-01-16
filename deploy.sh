@@ -7,6 +7,10 @@ set -ueo pipefail
 : "${BACKEND_ACCESS_KEY:?BACKEND_ACCESS_KEY the key to be used for the terraform backend}"
 : "${CONCOURSE_PASSWORD:?CONCOURSE_PASSWORD the password for the Concourse admin user}"
 
+echo "================================"
+echo "Terraforming infra"
+echo "================================"
+
 pushd terraform
 terraform init \
   -backend-config="storage_account_name=${BACKEND_STORAGE_ACCOUNT_NAME}" \
@@ -37,6 +41,9 @@ popd
 
 mkdir -p bosh-files
 
+echo "================================"
+echo "Deploying BOSH director"
+echo "================================"
 bosh create-env bosh-deployment/bosh.yml \
   --state=bosh-files/state.json \
   --vars-store=bosh-files/creds.yml \
@@ -70,8 +77,14 @@ export BOSH_CLIENT BOSH_CLIENT_SECRET BOSH_CA_CERT BOSH_ENVIRONMENT
 
 bosh env
 
+echo "================================"
+echo "Uploading stemcell"
+echo "================================"
 bosh upload-stemcell https://bosh.io/d/stemcells/bosh-azure-hyperv-ubuntu-xenial-go_agent
 
+echo "================================"
+echo "Updating cloud-config"
+echo "================================"
 pushd cloud-config
   bosh update-cloud-config cloud-config.yml \
     -o ops.yml \
@@ -85,6 +98,9 @@ pushd cloud-config
     --non-interactive
 popd
 
+echo "================================"
+echo "Deploying Concourse"
+echo "================================"
 pushd manifests
   bosh deploy -d concourse concourse.yml \
     --vars-store ../bosh-files/concourse-creds.yml \
