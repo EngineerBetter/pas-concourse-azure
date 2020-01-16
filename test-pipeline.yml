@@ -1,0 +1,28 @@
+---
+resources:
+- name: every-minute
+  type: time
+  source:
+    interval: 60s
+jobs:
+- name: read-from-credhub
+  serial: true
+  plan:
+  - get: every-minute
+    trigger: true
+  - task: do-something
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: alpine
+          tag: latest
+      params:
+        VAR: ((foo))
+      run:
+        path: sh
+        args:
+        - -euc
+        - |
+          [ ! -z "${VAR}" ] && echo "${VAR} pulled successfully from credhub"
