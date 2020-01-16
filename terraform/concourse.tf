@@ -178,8 +178,8 @@ resource "azurerm_network_security_rule" "dns" {
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
 
-resource "azurerm_network_security_rule" "bosh-credhub" {
-  name                        = "${var.env_id}-bosh-credhub"
+resource "azurerm_network_security_rule" "credhub" {
+  name                        = "${var.env_id}-credhub"
   priority                    = 204
   direction                   = "Inbound"
   access                      = "Allow"
@@ -192,14 +192,42 @@ resource "azurerm_network_security_rule" "bosh-credhub" {
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
 
-resource "azurerm_network_security_rule" "bosh-uaa" {
-  name                        = "${var.env_id}-bosh-uaa"
+resource "azurerm_network_security_rule" "uaa" {
+  name                        = "${var.env_id}-uaa"
   priority                    = 205
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
   source_port_range           = "*"
   destination_port_range      = "8443"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = "${azurerm_resource_group.concourse.name}"
+  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
+}
+
+resource "azurerm_network_security_rule" "concourse-https" {
+  name                        = "${var.env_id}-concourse-https"
+  priority                    = 206
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "443"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = "${azurerm_resource_group.concourse.name}"
+  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
+}
+
+resource "azurerm_network_security_rule" "concourse-http" {
+  name                        = "${var.env_id}-concourse-http"
+  priority                    = 207
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "80"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
   resource_group_name         = "${azurerm_resource_group.concourse.name}"
@@ -379,62 +407,6 @@ resource "azurerm_lb_probe" "concourse-credhub" {
   loadbalancer_id     = "${azurerm_lb.concourse.id}"
   protocol            = "TCP"
   port                = 8844
-}
-
-resource "azurerm_network_security_rule" "concourse-http" {
-  name                        = "${var.env_id}-concourse-http"
-  priority                    = 209
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "80"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.concourse.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
-}
-
-resource "azurerm_network_security_rule" "concourse-https" {
-  name                        = "${var.env_id}-concourse-https"
-  priority                    = 208
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "443"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.concourse.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
-}
-
-resource "azurerm_network_security_rule" "concourse-credhub" {
-  name                        = "${var.env_id}-uaa"
-  priority                    = 207
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "8844"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.concourse.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
-}
-
-resource "azurerm_network_security_rule" "concourse-uaa" {
-  name                        = "${var.env_id}-concourse-uaa"
-  priority                    = 206
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "8443"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.concourse.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
 
 resource "azurerm_lb_backend_address_pool" "concourse" {

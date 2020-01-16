@@ -21,6 +21,7 @@ Copy `terraform/concourse.tfvars.template` to `terraform/concourse.tfvars` and f
 BACKEND_STORAGE_ACCOUNT_NAME=<name of your pre-existing storage account> \
   BACKEND_CONTAINER_NAME="terraform" \
   BACKEND_ACCESS_KEY=<access key of your pre-existing storage account> \
+  CONCOURSE_PASSWORD=<password of atc/web> \
   ./deploy.sh
 ```
 

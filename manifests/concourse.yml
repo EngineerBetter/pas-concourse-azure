@@ -1,0 +1,308 @@
+name: concourse
+
+variables:
+- name: credhub_encryption_password
+  type: password
+  options: {length: 40}
+- name: credhub_db_password
+  type: password
+- name: atc_encryption_key
+  type: password
+  options: {length: 32}
+- name: uaa-jwt
+  type: rsa
+  options: {key_length: 4096}
+- name: uaa-users-admin
+  type: password
+- name: uaa-admin
+  type: password
+- name: uaa-login
+  type: password
+- name: uaa_clients_atc_to_credhub
+  type: password
+- name: credhub_cli_password
+  type: password
+- name: credhub_admin_client_secret
+  type: password
+- name: uaa_db_password
+  type: password
+- name: uaa-passphrase
+  type: password
+- name: influxdb_password
+  type: password
+- name: token_signing_key
+  type: rsa
+- name: tsa_host_key
+  type: ssh
+- name: worker_key
+  type: ssh
+- name: ca
+  options:
+    common_name: ConcourseCA
+    is_ca: true
+  type: certificate
+- name: internal_tls
+  type: certificate
+  options:
+    ca: ca
+    common_name: ((external_host))
+    alternative_names:
+    - ((external_host))
+    - 127.0.0.1
+- name: external_tls
+  type: certificate
+  options:
+    ca: ca
+    common_name: ((external_host))
+
+releases:
+- name: "concourse"
+  version: "5.8.0"
+  url: "https://bosh.io/d/github.com/concourse/concourse-bosh-release?v=5.8.0"
+  sha1: "66b8a0d51b0436bd615eb9b99fc5d3963dd87efa"
+- name: "credhub"
+  version: "2.5.9"
+  url: "https://bosh.io/d/github.com/pivotal-cf/credhub-release?v=2.5.9"
+  sha1: "225d508eed11c3f6f4a360118de068d5db9fa427"
+- name: "uaa"
+  version: "74.13.0"
+  url: "https://bosh.io/d/github.com/cloudfoundry/uaa-release?v=74.13.0"
+  sha1: "2eef558edc434d240d43ae255b59b10754d4785e"
+- name: "bosh-dns"
+  version: "1.17.0"
+  url: "https://bosh.io/d/github.com/cloudfoundry/bosh-dns-release?v=1.17.0"
+  sha1: "d514ab3ae376778e106e17c22b78a8705690ae1d"
+- name: "bpm"
+  version: "1.1.6"
+  url: "https://bosh.io/d/github.com/cloudfoundry/bpm-release?v=1.1.6"
+  sha1: "5bad6161dbbcf068830a100b6a76056fe3b99bc8"
+- name: postgres
+  sha1: 343f04f1594c57ecea65638802e94e311cd72688
+  url: https://bosh.io/d/github.com/cloudfoundry/postgres-release?v=40
+  version: "40"
+
+stemcells:
+- alias: xenial
+  os: ubuntu-xenial
+  version: latest
+
+instance_groups:
+- name: web
+  azs: [z1]
+  persistent_disk_type: default
+  instances: 1
+  networks:
+  - name: private
+  vm_extensions:
+    - lb
+  stemcell: xenial
+  vm_type: default
+  jobs:
+  - name: bpm
+    release: bpm
+  - name: web
+    release: concourse
+    properties:
+      encryption_key: ((atc_encryption_key))
+      allow_self_signed_certificates: true
+      add_local_users: ['admin:((atc_password))']
+      main_team:
+        auth:
+          local:
+            users: [admin]
+      bind_port: 80
+      credhub:
+        client_id: atc_to_credhub
+        client_secret: ((uaa_clients_atc_to_credhub))
+        tls:
+          ca_cert:
+            certificate: ((internal_tls.ca))
+        url: https://((external_host)):8844
+      external_url: ((external_url))
+      log_level: debug
+      postgresql:
+        database: &db_name atc
+        role: &db_role
+          name: concourse
+          password: ((postgres_password))
+      tls_cert: ((external_tls.certificate))
+      tls_key: ((external_tls.private_key))
+      tls_bind_port: 443
+      token_signing_key: ((token_signing_key))
+      worker_gateway:
+        host_key: ((tsa_host_key))
+        authorized_keys: [((worker_key.public_key))]
+  - name: uaa
+    release: uaa
+    properties:
+      encryption:
+        encryption_keys:
+        - label: 'uaa-passphrase'
+          passphrase: ((uaa-passphrase))
+        active_key_label: 'uaa-passphrase'
+      uaa:
+        consumes:
+          database:
+            from: db
+        url: https://((external_host)):8443
+        catalina_opts: -Djava.security.egd=file:/dev/./urandom -Xmx768m -XX:MaxMetaspaceSize=256m
+        scim:
+          users:
+          - name: admin
+            password: ((uaa-users-admin))
+            groups:
+            - scim.write
+            - scim.read
+            - bosh.admin
+            - credhub.read
+            - credhub.write
+          - name: credhub-cli
+            password: ((credhub_cli_password))
+            groups:
+            - credhub.read
+            - credhub.write
+        clients:
+          credhub_cli:
+            override: true
+            authorized-grant-types: password,refresh_token
+            scope: credhub.read,credhub.write
+            authorities: uaa.none
+            access-token-validity: 30
+            refresh-token-validity: 3600
+            secret: ""
+          credhub_admin:
+            override: true
+            authorized-grant-types: client_credentials
+            scope: ""
+            authorities: credhub.read,credhub.write
+            access-token-validity: 30
+            refresh-token-validity: 3600
+            secret: ((credhub_admin_client_secret))
+          atc_to_credhub:
+            override: true
+            authorized-grant-types: client_credentials
+            scope: ""
+            authorities: credhub.read,credhub.write
+            access-token-validity: 3600
+            secret: ((uaa_clients_atc_to_credhub))
+        admin: {client_secret: ((uaa-admin))}
+        login: {client_secret: ((uaa-login))}
+        zones: {internal: {hostnames: []}}
+        sslCertificate: ((internal_tls.certificate))
+        sslPrivateKey: ((internal_tls.private_key))
+        jwt:
+          revocable: true
+          policy:
+            active_key_id: key-1
+            keys:
+              key-1:
+                signingKey: ((uaa-jwt.private_key))
+      uaadb:
+        port: 5432
+        db_scheme: postgresql
+        tls: disabled
+        databases:
+        - tag: uaa
+          name: &uaa_db uaa
+        roles:
+        - tag: admin
+          name: *uaa_db
+          password: &uaa_db_passwd ((uaa_db_password))
+      login:
+        saml:
+          serviceProviderCertificate: ((internal_tls.certificate))
+          serviceProviderKey: ((internal_tls.private_key))
+          serviceProviderKeyPassword: ""
+  - name: credhub
+    release: credhub
+    properties:
+      credhub:
+        tls: ((internal_tls))
+        authorization:
+          permissions:
+            - path: /*
+              actors: ["uaa-client:credhub_cli","uaa-client:credhub_admin"]
+              operations: [read,write,delete,read_acl,write_acl]
+            - path: /concourse/*
+              actors: ["uaa-client:atc_to_credhub"]
+              operations: [read,read_acl]
+        authentication:
+          uaa:
+            url: https://((external_host)):8443
+            verification_key: ((uaa-jwt.public_key))
+            ca_certs: [((internal_tls.ca))]
+        data_storage:
+          type: postgres
+          database: &credhub_db credhub
+          username: &credhub_db_role credhub
+          password: &credhub_db_passwd ((credhub_db_password))
+          require_tls: false
+        encryption:
+          keys:
+          - provider_name: int
+            active: true
+            key_properties:
+              encryption_password: ((credhub_encryption_password))
+          providers:
+          - name: int
+            type: internal
+  - name: bosh-dns
+    release: bosh-dns
+    properties:
+      cache:
+        enabled: true
+      api:
+        server:
+          tls: ((internal_tls))
+        client:
+          tls: ((internal_tls))
+
+- name: worker
+  azs: [z1]
+  instances: 1
+  networks:
+  - name: private
+  stemcell: xenial
+  vm_type: default
+  jobs:
+  - name: worker
+    release: concourse
+    properties:
+      drain_timeout: 10m
+      worker_gateway: {worker_key: ((worker_key))}
+
+- name: db
+  azs:
+  - z1
+  instances: 1
+  jobs:
+  - name: postgres
+    properties:
+      databases:
+        databases:
+        - name: *db_name
+        - name: *uaa_db
+        - name: *credhub_db
+        port: 5432
+        roles:
+        - *db_role
+        - name: *uaa_db
+          password: *uaa_db_passwd
+        - name: *credhub_db
+          password: *credhub_db_passwd
+    provides:
+      postgres:
+        as: db
+    release: postgres
+  networks:
+  - name: private
+  persistent_disk_type: 1GB
+  stemcell: xenial
+  vm_type: default
+
+update:
+  canaries: 1
+  canary_watch_time: 1000-600000
+  max_in_flight: 3
+  serial: false
+  update_watch_time: 1000-600000

@@ -85,27 +85,11 @@ pushd cloud-config
     --non-interactive
 popd
 
-pushd concourse-bosh-deployment/cluster
+pushd manifests
   bosh deploy -d concourse concourse.yml \
-    -l ../versions.yml \
-    --vars-store ../../bosh-files/concourse-creds.yml \
-    -o operations/basic-auth.yml \
-    -o operations/web-network-extension.yml \
-    -o operations/tls.yml \
-    -o operations/tls-vars.yml \
-    -o operations/privileged-http.yml \
-    -o operations/privileged-https.yml \
-    --var local_user.username=admin \
-    --var local_user.password="${CONCOURSE_PASSWORD}" \
+    --vars-store ../bosh-files/concourse-creds.yml \
+    --var atc_password="${CONCOURSE_PASSWORD}" \
     --var external_host="${concourse_lb_ip}" \
     --var external_url="https://${concourse_lb_ip}" \
-    --var network_name=private \
-    --var web_vm_type=default \
-    --var web_network_name=private \
-    --var db_vm_type=default \
-    --var db_persistent_disk_type="1GB" \
-    --var worker_vm_type=default \
-    --var deployment_name=concourse \
-    --var web_network_vm_extension=lb \
     --non-interactive
 popd
