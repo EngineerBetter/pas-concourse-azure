@@ -43,6 +43,38 @@ BOSH_ENVIRONMENT=<external ip of your director>
 export BOSH_GW_USER BOSH_GW_PRIVATE_KEY BOSH_CA_CERT BOSH_CLIENT BOSH_CLIENT_SECRET BOSH_ENVIRONMENT
 ```
 
+## Log into Concourse
+
+```sh
+pushd terraform
+  concourse_lb_ip=$(terraform output concourse_lb_ip)
+popd
+
+fly -t test \
+  login -k \
+  -c "https://${concourse_lb_ip}" \
+  -u admin \
+  -p "${CONCOURSE_PASSWORD}
+```
+
+## Log into Credhub
+
+```sh
+pushd terraform
+  concourse_lb_ip=$(terraform output concourse_lb_ip)
+popd
+
+bosh int bosh-files/concourse-creds.yml --path /internal_tls/ca > bosh-files/credhub_ca.pem
+chmod 600 bosh-files/credhub_ca.pem
+
+export CREDHUB_SERVER="https://${concourse_lb_ip}:8844"
+export CREDHUB_CLIENT=credhub_admin
+export CREDHUB_CA_CERT="${PWD}/bosh-files/credhub_ca.pem"
+export CREDHUB_SECRET="$(bosh int bosh-files/concourse-creds.yml --path /credhub_admin_client_secret)"
+
+credhub login
+```
+
 ## Destroy
 
 ```sh
