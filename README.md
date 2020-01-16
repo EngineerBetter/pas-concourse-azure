@@ -78,8 +78,5 @@ credhub login
 ## Destroy
 
 ```sh
-BACKEND_STORAGE_ACCOUNT_NAME=<name of your pre-existing storage account> \
-  BACKEND_CONTAINER_NAME="terraform" \
-  BACKEND_ACCESS_KEY=<access key of your pre-existing storage account> \
-  ./destroy.sh
+./destroy.sh
 ```
