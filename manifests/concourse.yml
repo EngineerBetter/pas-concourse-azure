@@ -26,6 +26,8 @@ variables:
   type: password
 - name: uaa_db_password
   type: password
+- name: postgres_password
+  type: password
 - name: uaa-passphrase
   type: password
 - name: token_signing_key
